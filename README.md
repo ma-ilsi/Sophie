@@ -2,13 +2,13 @@
 A [sophisticated copyright linter](https://github.com/aws/s2n-tls/issues/4078#issuecomment-1707031744) implemented as a portable UNIX shell script.
 
 ## Overview
-Sophie handles your compliance checks by parsing a human-readable configuration file which means you can make simple to complex tests of legal standards across your project as easy as defining patterns and making statements.
+Sophie handles your copyright header compliance checks by parsing a human-readable configuration file. This means you can make simple to complex tests of your custom or industry legal standards across your project as easy as defining patterns and making statements.
 
 Here's an example `sophie.config`:
 
 ```
 filecabinet
-	net_code[pattern="src/net_.*\.[ch]";]
+	net_code[pattern="./src/net_.*\.[ch]";]
 
 notices
 	net_code_author[literal="Copyright Netcode Author";]
