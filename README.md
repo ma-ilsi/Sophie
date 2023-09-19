@@ -8,13 +8,13 @@ Here's an example `sophie.config`:
 
 ```
 filecabinet
-	net_code[pattern="src/net_.*.[ch]"~]
+	net_code[pattern="src/net_.*\.[ch]";]
 
 notices
-	net_code_author[literal="Copyright Netcode Author"~]
+	net_code_author[literal="Copyright Netcode Author";]
 
 compliance
-	net_code_author_ip["net_code_author in net_code"~]
+	net_code_author_ip["net_code_author in net_code";]
 ```
 
 Sophie can operate with minute details to ensure precise placement/structure of copyright notices, and defensively, leaving no room for any un-acknowledged intellectual property in your code.
