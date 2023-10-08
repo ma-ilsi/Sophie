@@ -117,7 +117,6 @@ while read line; do
 				(( ++cut_count ))
 				line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
-
 				#Filter condition
 				cut_count=`expr "$line" : "[^\<\";\>]*\";"`
 				condition=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/\";//"`
@@ -203,25 +202,24 @@ while read line; do
 				line=`printf "%s" "$line" | sed "s/^[ ]*//"`
 
 				#Filter
-				cut_count=`expr "$line" : ".*=\""`
+				cut_count=`expr "$line" : "[^=]*=\""`
 				filter=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/=\"//"`
 				(( ++cut_count ))
 				line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 				#Filter condition
-				cut_count=`expr "$line" : ".*[^\\]\";"`
+				cut_count=`expr "$line" : "[^\<\";\>]*\";"`
 				condition=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/\";//"`
 				(( ++cut_count ))
 				line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 				#Apply filter after fetching old filter condition
-
 				if printf "%s" "$notices" | grep -q "$curr_identifier"; then
 					old_notice=`printf "%s" "$notices" | grep -F "__SOPHIE_IDENTIFIER$curr_identifier="`
-					old_notice=`printf "%s" "$file_cabinet" | sed "s/__SOPHIE_IDENTIFIER$curr_identifier=//"`
+					old_notice=`printf "%s" "$notices" | sed "s/__SOPHIE_IDENTIFIER$curr_identifier=//"`
 
 					#Need to remove leftover \n at the beginning from previous commands
-					old_files=`printf "%s" "$old_notice" | tr -d "\n"`
+					old_notice=`printf "%s" "$old_notice" | tr -d "\n"`
 				else
 					old_notice="grep -q"
 				fi
@@ -257,11 +255,18 @@ while read line; do
 
 				fi
 
-				#if [ "$filter" = "location" ]; then
+				if [ "$filter" = "location" ]; then
 
-					#TODO
+					new_notice=`printf "%s%s" "sed -n \"$condition\"p | " "$old_notice"`
 
-				#fi
+					#Remove old
+					notices=`printf "%s" "$notices" | sed "s/__SOPHIE_IDENTIFIER$curr_identifier=.*//"`
+					#Put new
+					notices=`printf "%s\n%s" "$notices" "__SOPHIE_IDENTIFIER$curr_identifier=$new_notice"`
+
+					#This filter is done
+					filter=""
+				fi
 
 			done
 
@@ -343,7 +348,9 @@ EOF
 
 				for file in $compliance_files; do
 
-					if eval "$compliance_notice" "$file"; then
+					#Consider using placeholders in the command stirngs to be filled in her with the filename
+
+					if eval "$compliance_notice" < "$file"; then
 						printf "Success: %s\n" "$file"
 						(( ++success_count ))
 					else
