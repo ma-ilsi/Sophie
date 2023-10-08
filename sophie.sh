@@ -241,13 +241,21 @@ while read line; do
 
 				fi
 
+				#The `literal` filter is mutually excl. with `pattern`. Must not use both in a definition.
 
-				#if [ "$filter" = "pattern" ]; then
+				if [ "$filter" = "pattern" ]; then
 
-					#TODO
+					new_notice=`printf "%s%s%s" "$old_notice" " __SOPHIE_MARKER " "\"$condition\""`
 
-				#fi
+					#Remove old
+					notices=`printf "%s" "$notices" | sed "s/__SOPHIE_IDENTIFIER$curr_identifier=.*//"`
+					#Put new
+					notices=`printf "%s\n%s" "$notices" "__SOPHIE_IDENTIFIER$curr_identifier=$new_notice"`
 
+					#This filter is done
+					filter=""
+
+				fi
 
 				#if [ "$filter" = "location" ]; then
 
