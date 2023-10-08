@@ -163,6 +163,20 @@ while read line; do
 					filter="" 
 
 				fi
+
+				if [ "$filter" = "mtime" ]; then
+
+					new_files=`printf "%s%s%s" "$old_files" " __SOPHIE_MARKER " "-mtime $condition"`
+
+					#Remove old
+					file_cabinet=`printf "%s" "$file_cabinet" | sed "s/__SOPHIE_IDENTIFIER$curr_identifier=.*//"`
+					#Put new
+					file_cabinet=`printf "%s\n%s" "$file_cabinet" "__SOPHIE_IDENTIFIER$curr_identifier=$new_files"`
+
+					#This filter is done
+					filter="" 
+
+				fi
 				
 			done
 
