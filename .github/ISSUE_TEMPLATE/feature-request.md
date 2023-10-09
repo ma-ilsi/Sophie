@@ -1,7 +1,7 @@
 ---
 name: Feature Request
 about: Propose a feature for Sophie
-title: ''
+title: 'Feature: '
 labels: ''
 assignees: ''
 
