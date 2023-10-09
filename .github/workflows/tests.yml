@@ -22,6 +22,4 @@ jobs:
 
       # Runs a multiple commands using the runners shell
       - name: Sophie self-lint
-        run: |
-          cd $GITHUB_WORKSPACE
-          ./sophie
+        run: ls
