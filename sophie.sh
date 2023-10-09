@@ -5,12 +5,13 @@
 #Licensed under Apache 2.0 License - see LICENSE file.
 
 
-#Note: double quotes (") inside filter values of the sophie.config file must be escaped
+#Note: double quotes (") inside filter values of the sophie.config file must be escaped (\")
+#Note: pipes (|) inside filter values of the sophie.config file must be escaped (\|)
 
 # -- Global -- #
 
 #Config file
-config="$PWD/sophie.config"
+config=`cat $PWD/sophie.config`
 
 #Sophie config commands
 supported_commands=" filecabinet notices compliance "
@@ -26,6 +27,9 @@ filter=""
 
 #Value of filter to filter files using
 condition=""
+
+#Index used for keeping place in strings that are passed to `cut(1)`
+cut_count=0
 
 
 # -- File Cabinet -- #
@@ -78,9 +82,12 @@ success_count=0
 #No. of failing files
 fail_count=0
 
+refinement=""
+refined_files=""
 
 
-cat "$config" | while read line; do
+
+while read line; do
 
 		if [ -z "$line" ]; then
 			continue
@@ -96,9 +103,11 @@ cat "$config" | while read line; do
 
 			#Identifier
 			cut_count=`expr "$line" : "[^\[]*\["`
-			curr_identifier=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/\[$//"`
-			(( ++cut_count ))
+			curr_identifier=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/[[:space:]]*\[$//"`
+			((cut_count+=1))
 			line=`printf "%s" "$line" | cut -c"$cut_count"-`
+
+			#TODO: refinements are detected as second time requests to alter this identifier and a marker to indicate a refinement is placed.
 
 			while [ "$line" != "]" ]; do
 
@@ -106,27 +115,29 @@ cat "$config" | while read line; do
 				line=`printf "%s" "$line" | sed "s/^[ ]*//"`
 
 				#Filter
-				cut_count=`expr "$line" : ".*=\""`
+				cut_count=`expr "$line" : "[^=]*=\""`
 				filter=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/=\"//"`
-				(( ++cut_count ))
+				((cut_count+=1))
 				line=`printf "%s" "$line" | cut -c"$cut_count"-`
-
 
 				#Filter condition
-				cut_count=`expr "$line" : ".*[^\]\";"`
+				cut_count=`expr "$line" : "[^\<\";\>]*\";"`
 				condition=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/\";//"`
-				(( ++cut_count ))
+				((cut_count+=1))
 				line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
-				#Apply filter after fetching old filter condition
-
+				#Fetching current command that represents matching files
 				if printf "%s" "$file_cabinet" | grep -q -F "__SOPHIE_IDENTIFIER$curr_identifier="; then
 					old_files=`printf "%s" "$file_cabinet" | grep -F "__SOPHIE_IDENTIFIER$curr_identifier="`
 					old_files=`printf "%s" "$file_cabinet" | sed "s/__SOPHIE_IDENTIFIER$curr_identifier=//"`
+
+					#Need to remove leftover \n at the beginning from previous commands
+					old_files=`printf "%s" "$old_files" | tr -d "\n"`
 				else
 					old_files="find . -type f"
 				fi
 
+				#Applying filters
 				if [ "$filter" = "pattern" ]; then
 
 					new_files=`printf "%s%s%s" "$old_files" " __SOPHIE_MARKER " "-regex $condition"`
@@ -140,8 +151,41 @@ cat "$config" | while read line; do
 					filter="" 
 
 				fi
+
+				if [ "$filter" = "size" ]; then
+
+					new_files=`printf "%s%s%s" "$old_files" " __SOPHIE_MARKER " "-size $condition"`
+
+					#Remove old
+					file_cabinet=`printf "%s" "$file_cabinet" | sed "s/__SOPHIE_IDENTIFIER$curr_identifier=.*//"`
+					#Put new
+					file_cabinet=`printf "%s\n%s" "$file_cabinet" "__SOPHIE_IDENTIFIER$curr_identifier=$new_files"`
+
+					#This filter is done
+					filter="" 
+
+				fi
+
+				if [ "$filter" = "mtime" ]; then
+
+					new_files=`printf "%s%s%s" "$old_files" " __SOPHIE_MARKER " "-mtime $condition"`
+
+					#Remove old
+					file_cabinet=`printf "%s" "$file_cabinet" | sed "s/__SOPHIE_IDENTIFIER$curr_identifier=.*//"`
+					#Put new
+					file_cabinet=`printf "%s\n%s" "$file_cabinet" "__SOPHIE_IDENTIFIER$curr_identifier=$new_files"`
+
+					#This filter is done
+					filter="" 
+
+				fi
 				
 			done
+
+			#This identifier is now deifned. We put a refinement marker in case a new command to refine the result of the previous one will be defined.
+
+			#Put refinement marker
+			file_cabinet=`printf "%s%s" "$file_cabinet" " __SOPHIE_REFINEMENT "`
 
 			continue
 		fi
@@ -151,8 +195,8 @@ cat "$config" | while read line; do
 
 			#Identifier
 			cut_count=`expr "$line" : ".*\["`
-			curr_identifier=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/\[$//"`
-			(( ++cut_count ))
+			curr_identifier=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/[[:space:]]*\[$//"`
+			((cut_count+=1))
 			line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 			while [ "$line" != "]" ]; do
@@ -161,21 +205,24 @@ cat "$config" | while read line; do
 				line=`printf "%s" "$line" | sed "s/^[ ]*//"`
 
 				#Filter
-				cut_count=`expr "$line" : ".*=\""`
+				cut_count=`expr "$line" : "[^=]*=\""`
 				filter=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/=\"//"`
-				(( ++cut_count ))
+				((cut_count+=1))
 				line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 				#Filter condition
-				cut_count=`expr "$line" : ".*[^\\]\";"`
+				cut_count=`expr "$line" : "[^\<\";\>]*\";"`
 				condition=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/\";//"`
-				(( ++cut_count ))
+				((cut_count+=1))
 				line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 				#Apply filter after fetching old filter condition
-
 				if printf "%s" "$notices" | grep -q "$curr_identifier"; then
 					old_notice=`printf "%s" "$notices" | grep -F "__SOPHIE_IDENTIFIER$curr_identifier="`
+					old_notice=`printf "%s" "$notices" | sed "s/__SOPHIE_IDENTIFIER$curr_identifier=//"`
+
+					#Need to remove leftover \n at the beginning from previous commands
+					old_notice=`printf "%s" "$old_notice" | tr -d "\n"`
 				else
 					old_notice="grep -q"
 				fi
@@ -195,19 +242,34 @@ cat "$config" | while read line; do
 
 				fi
 
+				#The `literal` filter is mutually excl. with `pattern`. Must not use both in a definition.
 
-				#if [ "$filter" = "pattern" ]; then
+				if [ "$filter" = "pattern" ]; then
 
-					#TODO
+					new_notice=`printf "%s%s%s" "$old_notice" " __SOPHIE_MARKER " "\"$condition\""`
 
-				#fi
+					#Remove old
+					notices=`printf "%s" "$notices" | sed "s/__SOPHIE_IDENTIFIER$curr_identifier=.*//"`
+					#Put new
+					notices=`printf "%s\n%s" "$notices" "__SOPHIE_IDENTIFIER$curr_identifier=$new_notice"`
 
+					#This filter is done
+					filter=""
 
-				#if [ "$filter" = "location" ]; then
+				fi
 
-					#TODO
+				if [ "$filter" = "location" ]; then
 
-				#fi
+					new_notice=`printf "%s%s" "sed -n \"$condition\"p | " "$old_notice"`
+
+					#Remove old
+					notices=`printf "%s" "$notices" | sed "s/__SOPHIE_IDENTIFIER$curr_identifier=.*//"`
+					#Put new
+					notices=`printf "%s\n%s" "$notices" "__SOPHIE_IDENTIFIER$curr_identifier=$new_notice"`
+
+					#This filter is done
+					filter=""
+				fi
 
 			done
 
@@ -221,25 +283,25 @@ cat "$config" | while read line; do
 
 			#Identifier
 			cut_count=`expr "$line" : ".*\["`
-			curr_identifier=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/\[$//"`
-			(( cut_count += 2 ))
+			curr_identifier=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/[[:space:]]*\[$//"`
+			((cut_count+=2))
 			line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 			compliance_identifier=$curr_identifier
 
 			cut_count=`expr "$line" : "[^ ]*"`
 			compliance_notice_identifier=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/ //"`
-			(( ++cut_count ))
+			((cut_count+=1))
 			line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 			cut_count=`expr "$line" : ".* "`
 			compliance_preposition=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/ //"`
-			(( ++cut_count ))
+			((cut_count+=1))
 			line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 			cut_count=`expr "$line" : ".*[^\\]\";"`
 			compliance_files_identifier=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/\";//"`
-			(( ++cut_count ))
+			((cut_count+=1))
 			line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 			if [ -n "$compliance_files_identifier" ]; then
@@ -249,11 +311,21 @@ cat "$config" | while read line; do
 					if [ -n "$compliance_preposition" ]; then
 
 						compliance_files=`printf "%s" "$file_cabinet" | grep -F "__SOPHIE_IDENTIFIER$compliance_files_identifier="`
+
 						compliance_files=`printf "%s" "$compliance_files" | sed "s/__SOPHIE_IDENTIFIER$compliance_files_identifier=//"`
 
 						compliance_files=`printf "%s" "$compliance_files" | sed "s/ __SOPHIE_MARKER / /g"`
 
-						compliance_files=`$compliance_files`
+						compliance_files=`printf "%s" "$compliance_files" | sed "s/ __SOPHIE_REFINEMENT /\
+/g"`
+
+						while read refinement; do
+							compliance_files=""
+							refined_files=`$refinement`
+							compliance_files=`printf "%s\n%s" "$compliance_files" "$refined_files"`
+						done <<EOF
+$compliance_files
+EOF
 
 						compliance_notice=`printf "%s" "$notices" | grep -F "__SOPHIE_IDENTIFIER$compliance_notice_identifier="`
 
@@ -279,7 +351,9 @@ cat "$config" | while read line; do
 
 				for file in $compliance_files; do
 
-					if eval "$compliance_notice" "$file"; then
+					#Consider using placeholders in the command stirngs to be filled in her with the filename
+
+					if eval "$compliance_notice" < "$file"; then
 						printf "Success: %s\n" "$file"
 						(( ++success_count ))
 					else
@@ -301,6 +375,8 @@ cat "$config" | while read line; do
 		fi
 
 
-done
+done <<EOF
+$config
+EOF
 
 printf "\n"
