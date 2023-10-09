@@ -104,7 +104,7 @@ while read line; do
 			#Identifier
 			cut_count=`expr "$line" : "[^\[]*\["`
 			curr_identifier=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/[[:space:]]*\[$//"`
-			((cut_count+=1))
+			cut_count=$((cut_count+1))
 			line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 			#TODO: refinements are detected as second time requests to alter this identifier and a marker to indicate a refinement is placed.
@@ -117,13 +117,13 @@ while read line; do
 				#Filter
 				cut_count=`expr "$line" : "[^=]*=\""`
 				filter=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/=\"//"`
-				((cut_count+=1))
+				cut_count=$((cut_count+1))
 				line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 				#Filter condition
 				cut_count=`expr "$line" : "[^\<\";\>]*\";"`
 				condition=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/\";//"`
-				((cut_count+=1))
+				cut_count=$((cut_count+1))
 				line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 				#Fetching current command that represents matching files
@@ -196,7 +196,7 @@ while read line; do
 			#Identifier
 			cut_count=`expr "$line" : ".*\["`
 			curr_identifier=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/[[:space:]]*\[$//"`
-			((cut_count+=1))
+			cut_count=$((cut_count+1))
 			line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 			while [ "$line" != "]" ]; do
@@ -207,13 +207,13 @@ while read line; do
 				#Filter
 				cut_count=`expr "$line" : "[^=]*=\""`
 				filter=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/=\"//"`
-				((cut_count+=1))
+				cut_count=$((cut_count+1))
 				line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 				#Filter condition
 				cut_count=`expr "$line" : "[^\<\";\>]*\";"`
 				condition=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/\";//"`
-				((cut_count+=1))
+				cut_count=$((cut_count+1))
 				line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 				#Apply filter after fetching old filter condition
@@ -284,24 +284,24 @@ while read line; do
 			#Identifier
 			cut_count=`expr "$line" : ".*\["`
 			curr_identifier=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/[[:space:]]*\[$//"`
-			((cut_count+=2))
+			cut_count=$((cut_count+2))
 			line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 			compliance_identifier=$curr_identifier
 
 			cut_count=`expr "$line" : "[^ ]*"`
 			compliance_notice_identifier=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/ //"`
-			((cut_count+=1))
+			cut_count=$((cut_count+1))
 			line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 			cut_count=`expr "$line" : ".* "`
 			compliance_preposition=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/ //"`
-			((cut_count+=1))
+			cut_count=$((cut_count+1))
 			line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 			cut_count=`expr "$line" : ".*[^\\]\";"`
 			compliance_files_identifier=`printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/\";//"`
-			((cut_count+=1))
+			cut_count=$((cut_count+1))
 			line=`printf "%s" "$line" | cut -c"$cut_count"-`
 
 			if [ -n "$compliance_files_identifier" ]; then
@@ -355,16 +355,16 @@ EOF
 
 					if eval "$compliance_notice" < "$file"; then
 						printf "Success: %s\n" "$file"
-						(( ++success_count ))
+						success_count=$((success_count+1))
 					else
 						printf "Fail: %s\n" "$file"
-						(( ++fail_count ))
+						fail_count=$((fail_count+1))
 
 					fi
 
 				done
 
-				(( fail_count+=$success_count ))
+				fail_count=$((fail_count+=success_count))
 
 				printf "Compliance Results For %s: %s/%s files passed.\n" "$compliance_identifier" "$success_count" "$fail_count"
 
