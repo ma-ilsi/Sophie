@@ -4,8 +4,9 @@ name: Sophie Tests
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on pull request events for the "main" branch
+  # Triggers the workflow on pull request events for the "main" branch 
   pull_request:
+    types: [ opened, reopened, review-requested ]
     branches: [ "main" ]
 
   # Allows you to run this workflow manually from the Actions tab
@@ -30,9 +31,24 @@ jobs:
           chmod +rx sophie.sh
           ./sophie.sh
           
-  macOS:
+  macOS-11:
   
-    name: macOS conformance
+    name: macOS-11 conformance
+    runs-on: macos-11
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+
+      # Runs multiple commands using the runners shell
+      - name: Sophie self-lint
+        run: |
+          chmod +rx sophie.sh
+          ./sophie.sh
+
+  macOS-latest:
+  
+    name: macOS-latest conformance
     runs-on: macos-latest
 
     steps:
