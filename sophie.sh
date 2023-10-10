@@ -9,6 +9,10 @@
 
 # -- Global -- #
 
+# Sophie now supports chaining definitions like this:
+# net_code[pattern="...";][size="+1k";]
+# This represents additive refinement syntax.
+
 # Config file
 config="$PWD/sophie.config"
 
@@ -84,8 +88,8 @@ refined_files=""
 # Function to reset the filters for an identifier
 reset_filters() {
     local identifier="$1"
-    file_cabinet=$(echo "$file_cabinet" | sed "/__SOPHIE_IDENTIFIER$identifier=/d")
-    notices=$(echo "$notices" | sed "/__SOPHIE_IDENTIFIER$identifier=/d")
+    file_cabinet=$(printf "%s" "$file_cabinet" | sed "/__SOPHIE_IDENTIFIER$identifier=/d")
+    notices=$(printf "%s" "$notices" | sed "/__SOPHIE_IDENTIFIER$identifier=/d")
 }
 
 while read -r line; do
