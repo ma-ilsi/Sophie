@@ -4,11 +4,8 @@ name: Sophie Tests
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on pull request events for the "main" branch 
+  # Triggers the workflow on pull request events 
   pull_request:
-    types: [ opened, reopened, review-requested ]
-    branches: [ "main" ]
-
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
