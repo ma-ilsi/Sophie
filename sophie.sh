@@ -9,10 +9,6 @@
 
 # -- Global -- #
 
-# Sophie now supports chaining definitions like this:
-# net_code[pattern="...";][size="+1k";]
-# This represents additive refinement syntax.
-
 # Config file
 config="$PWD/sophie.config"
 
