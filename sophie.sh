@@ -100,7 +100,8 @@ while read -r line; do
 
     if [ "$curr_command" = "filecabinet" ]; then
         # Identifier
-        cut_count=$(expr "$line" : "[^\[]*\[")
+        cut_count=$(expr "$line" : '[^=]*="[^"]*"')
+
         curr_identifier=$(printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/[[:space:]]*\[$//")
         cut_count=$((cut_count + 1))
         line=$(printf "%s" "$line" | cut -c"$cut_count"-)
@@ -124,7 +125,7 @@ while read -r line; do
 
                 # Filter condition
                 cut_count=$(expr "$line" : "[^\<\";\>]*\";")
-                condition=$(printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/\";//")
+                condition=$(printf "$line" | awk -F'=' '{gsub(/"/, "", $2); print $2}')
                 cut_count=$((cut_count + 1))
                 line=$(printf "%s" "$line" | cut -c"$cut_count"-)
 
@@ -141,7 +142,7 @@ while read -r line; do
 
                 # Applying filters
                 if [ "$filter" = "pattern" ]; then
-                    new_files=$(printf "%s%s%s" "$old_files" " __SOPHIE_MARKER " "-regex $condition")
+                    new_files=$(printf "%s%s%s" "$old_files" " __SOPHIE_MARKER " "-regex \"$condition\"")
                 fi
 
                 if [ "$filter" = "size" ]; then
@@ -153,7 +154,7 @@ while read -r line; do
                 fi
 
                 # Remove old
-                file_cabinet=$(printf "%s" "$file_cabinet" | sed "s/__SOPHIE_IDENTIFIER$curr_identifier=.*//")
+                file_cabinet=$(printf "$file_cabinet" | awk -v id="__SOPHIE_IDENTIFIER$curr_identifier=" '!index($0, id)')
                 # Put new
                 file_cabinet=$(printf "%s\n%s" "$file_cabinet" "__SOPHIE_IDENTIFIER$curr_identifier=$new_files")
             done
@@ -199,7 +200,7 @@ while read -r line; do
                     old_notice=$(printf "%s" "$notices" | sed "s/__SOPHIE_IDENTIFIER$curr_identifier=//")
 
                     # Need to remove leftover \n at the beginning from previous commands
-                    old_notice=$(printf "%s" "$old_notice" | tr-d "\n")
+                    old_notice=$(printf "%s" "$old_notice" | tr -d "\n")
                 else
                     old_notice="grep -q"
                 fi
