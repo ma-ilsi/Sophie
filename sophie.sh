@@ -100,7 +100,7 @@ while read -r line; do
 
     if [ "$curr_command" = "filecabinet" ]; then
         # Identifier
-        cut_count=$(expr "$line" : '[^=]*="[^"]*"')
+        cut_count=$(expr "$line" : '[^[]*\[')
 
         curr_identifier=$(printf "%s" "$line" | cut -c1-"$cut_count" | sed "s/[[:space:]]*\[$//")
         cut_count=$((cut_count + 1))
