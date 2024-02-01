@@ -91,14 +91,14 @@ while read line; do
 
     if [ -z "$line" ]; then
         continue
-	fi
+    fi
 
-	if printf "%s" "$supported_commands" | grep -q -F " $line "; then
+    if printf "%s" "$supported_commands" | grep -q -F " $line "; then
         curr_command=$line
         continue
-	fi
+    fi
 
-	if [ "$curr_command" = "filecabinet" ]; then
+    if [ "$curr_command" = "filecabinet" ]; then
 
         # Identifier
         cut_count=`expr "$line" : "[^\[]*\["`
@@ -149,7 +149,7 @@ while read line; do
                 file_cabinet=`printf "%s\n%s" "$file_cabinet" "__SOPHIE_IDENTIFIER$curr_identifier=$new_files"`
 
                 # This filter is done
-                filter="" 
+                filter=""
 
             fi
 
@@ -163,7 +163,7 @@ while read line; do
                 file_cabinet=`printf "%s\n%s" "$file_cabinet" "__SOPHIE_IDENTIFIER$curr_identifier=$new_files"`
 
                 # This filter is done
-                filter="" 
+                filter=""
 
             fi
 
@@ -177,7 +177,7 @@ while read line; do
                 file_cabinet=`printf "%s\n%s" "$file_cabinet" "__SOPHIE_IDENTIFIER$curr_identifier=$new_files"`
 
                 # This filter is done
-                filter="" 
+                filter=""
 
             fi
             
@@ -189,10 +189,10 @@ while read line; do
         file_cabinet=`printf "%s%s" "$file_cabinet" " __SOPHIE_REFINEMENT "`
 
         continue
-	fi
+    fi
 
 
-	if [ "$curr_command" = "notices" ]; then
+    if [ "$curr_command" = "notices" ]; then
 
         # Identifier
         cut_count=`expr "$line" : ".*\["`
@@ -279,10 +279,10 @@ while read line; do
 
         continue
 
-	fi
+    fi
 
 
-	if [ "$curr_command" = "compliance" ]; then
+    if [ "$curr_command" = "compliance" ]; then
 
         # Hardcoded to only support the `in` preposition. Prepositions can be extended easily without breaking configs.
 
@@ -342,9 +342,9 @@ EOF
 
             fi
 
-		fi
+        fi
 
-		if [ "$line" = "]" ]; then
+        if [ "$line" = "]" ]; then
 
             # This identifier's value is done being manipulated
             curr_identifier=""
@@ -374,11 +374,11 @@ EOF
 
             printf "Compliance Results For %s: %s/%s files passed.\n" "$compliance_identifier" "$success_count" "$fail_count"
 
-		fi
+        fi
 
-			continue
+            continue
 
-	fi
+    fi
 
 
 done <<EOF
